@@ -42,3 +42,20 @@ class Alumno:
         completo y la nota media del alumno con un decimal.
         """
         return f'{self.numIden}\t{self.nombre}\t{self.media():.1f}'
+
+import re
+
+def leeAlumnos(ficAlumnos):
+    expr_id = r'\s*(?P<id>\d+)\s+'
+    expr_nom= r'(?P<nom>[\w\s]+?)\s+'
+    expr_notes = r'(?P<notes>[\d.\s]+)\s*'
+    expresion = re.compile(expr_id + expr_nom + expr_notes) # + una o más veces, * 0 o más veces
+
+    with open(ficAlumnos, 'rt') as fpAlumnos:
+        for linea in fpAlumnos:
+            match = expresion.search(linea)
+            if match is not None:
+                print(match['id'])
+                print(match['nom'])
+                print(match['notes'])
+
