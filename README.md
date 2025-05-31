@@ -240,11 +240,135 @@ Inserte a continuación una captura de pantalla que muestre el resultado de ejec
 fichero `alumno.py` con la opción *verbosa*, de manera que se muestre el
 resultado de la ejecución de los tests unitarios.
 
+![alt text](image.png)
+
 ##### Código desarrollado
 
 Inserte a continuación los códigos fuente desarrollados en esta tarea, usando los
 comandos necesarios para que se realice el realce sintáctico en Python del mismo (no
 vale insertar una imagen o una captura de pantalla, debe hacerse en formato *markdown*).
+
+###### Código alumno.py
+
+```python
+import re
+
+def leeAlumnos(ficAlumnos):
+
+    """
+    Esta función lee el fichero de texto con los datos de todos los alumnos y devuelve un diccionario en el 
+    que la clave sea el nombre de cada alumno y su contenido el objeto `Alumno` correspondiente.
+
+
+    >>> alumnos = leeAlumnos('alumnos.txt')
+    >>> for alumno in alumnos:
+    ...     print(alumnos[alumno])
+    ...
+    171     Blanca Agirrebarrenetse 9.5
+    23      Carles Balcells de Lara 4.9
+    68      David Garcia Fuster     7.0
+    
+    """
+    expr_id = r'\s*(?P<id>\d+)\s+'
+    expr_nom= r'(?P<nom>[\w\s]+?)\s+'
+    expr_notes = r'(?P<notes>[\d.\s]+)\s*'
+    expresion = re.compile(expr_id + expr_nom + expr_notes) # + una o más veces, * 0 o más veces
+    alumnos = {}
+
+    with open(ficAlumnos, 'rt') as fpAlumnos:
+        for linea in fpAlumnos:
+            match = expresion.search(linea)
+            if match is not None:
+                id = int(match['id'])
+                nom = match['nom'].strip()
+                notes = [float(n) for n in match['notes'].split()]
+                alumnos[nom]= Alumno(nom, id, notes)
+    return alumnos
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
+
+
+```
+###### Código horas.py
+
+```python
+import re
+
+def normalizaHoras(ficText, ficNorm):
+
+    """
+    Función que normaliza horas de un fichero de texto a un formato HH:MM
+    """
+    def reemplaza(match):
+        grupo = match.group()
+
+        # 8h30 o 08h5m
+        h_m = re.match(r'^(\d{1,2})h(?:(\d{1,2})m?)?$', grupo)
+        if h_m:
+            h = int(h_m.group(1))
+            m = int(h_m.group(2)) if h_m.group(2) else 0
+            return f'{h}:{m:02d}'
+        
+
+        
+        # 8:30 o 18:05
+        h_p_m = re.match(r'^(\d{1,2}):(\d{2})$', grupo)
+        if h_p_m:
+            return grupo
+        
+        # hora hablada
+
+        hablado = re.match(r'^(\d{1,2})\s*(en punto|y cuarto|y media|menos cuarto)$', grupo)
+        if hablado:
+            h = int(hablado.group(1))
+            f = hablado.group(2)
+
+            if f == 'en punto':
+                return f'{h:02d}:00'
+            elif f == 'y cuarto':
+                return f'{h:02d}:15'
+            elif f == 'y media':
+                return f'{h:02d}:30'
+            elif f == 'menos cuarto':
+                h -= 1
+                if h == 0:
+                    h = 12
+                return f'{h:02d}:45'
+            return grupo
+        
+        # momento del día
+
+        momento = re.match(r'^(\d{1,2})\s+de la\s+(mañana|tarde|noche)$', grupo)
+        if momento:
+            h = int(momento.group(1))
+            p = momento.group(2)
+            if p == 'mañana':
+                if 1 <= h <= 11:
+                    return f'{h:02d}:{m:02d}'
+            elif p == 'tarde':
+                if 1 <= h <= 7:
+                    return f'{h+12:02d}:{m:02d}'
+            elif p == 'noche':
+                if 8 <= h <= 11:
+                    return f'{h+12:02d}:{m:02d}'
+                elif h == 12:
+                    return '00:00' 
+            return grupo
+        return grupo
+    
+    
+    compila= re.compile (r'\b\d{1,2}h(?:\d{1,2}m?)?'r'|\b\d{1,2}:\d{2}'r'|\b\d{1,2}\s*(?:en punto|y cuarto|y media|menos cuarto)'r'|\b\d{1,2}\s+de la\s+(?:mañana|tarde|noche)')
+
+    with open(ficText, encoding = 'utf-8') as entrada, open(ficNorm, 'w', encoding = 'utf-8') as salida:
+        for linea in entrada:
+            nueva = compila.sub(reemplaza, linea)
+            salida.write(nueva)
+    
+normalizaHoras('horas.txt', 'horas_normalizadas.txt')
+
+```
 
 ##### Subida del resultado al repositorio GitHub y *pull-request*
 
