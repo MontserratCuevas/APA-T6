@@ -5,6 +5,9 @@ def normalizaHoras(ficText, ficNorm):
     """
     Función que normaliza horas de un fichero de texto a un formato HH:MM
     """
+    def rojo(texto):
+        return f'<span style = "color:red">{texto}</span>' #devuelve en rojo las expresiones incorrectas
+
     def reemplaza(match):
         grupo = match.group()
 
@@ -13,22 +16,24 @@ def normalizaHoras(ficText, ficNorm):
         h_m = re.match(r'^(\d{1,2})h(?:(\d{1,2})m?)?$', grupo)
         if h_m:
             h = int(h_m.group(1))
-            m = int(h_m.group(2)) if h_m.group(2) else 0
-            if h < 24 and m <60:
+            m_str = h_m.group(2)
+            m = int(m_str) if m_str else 0
+            if  h < 24 and m <60:
                 return f'{h}:{m:02d}'
             else:
-                return f'<span style="color:red">{grupo}</span>'
+                return rojo(grupo)
         
         # 8:30 o 18:05
 
-        h_p_m = re.match(r'^(\d{1,2}):(\d{2})$', grupo)
+        h_p_m = re.match(r'^(\d{1,2}):(\d{1,2})$', grupo)
         if h_p_m:
             h = int(h_p_m.group(1))
-            m = int(h_p_m.group(2))
-            if h < 24 and m < 60:
+            m_str = h_p_m.group(2)
+            m = int(m_str)
+            if  h < 24 and m <60 and (m_str is None or len(m_str) == 2):
                 return f'{h}:{m:02d}'
             else:
-                return f'<span style="color:red">{grupo}</span>'
+                return rojo(grupo)
         
         # hora hablada
 
@@ -36,6 +41,9 @@ def normalizaHoras(ficText, ficNorm):
         if hablado:
             h = int(hablado.group(1))
             f = hablado.group(2)
+
+            if not (1 <= h <=12):
+                return rojo(grupo) # horas habladas correctamente son entre 1 y 12
 
             if f == 'en punto':
                 m = 0
@@ -78,12 +86,13 @@ def normalizaHoras(ficText, ficNorm):
                     pass
             elif p == 'tarde':
                 if 1 <= h <= 7:
-                    h += 12
+                    h += 12     
             elif p == 'noche':
                 if 8 <= h <= 11:
                     h += 12
                 elif h == 12:
-                    return '00:00'  
+                    return '00:00'
+                        
             return f'{h}:{m:02d}'
         
         # momento del día
@@ -96,23 +105,27 @@ def normalizaHoras(ficText, ficNorm):
             if p == 'mañana':
                 if 1 <= h <= 11:
                     pass
+                return rojo(grupo)
             elif p == 'tarde':
                 if 1 <= h <= 7:
                     h += 12
+                return rojo(grupo)
             elif p == 'noche':
                 if 8 <= h <= 11:
                     h += 12
                 elif h == 12:
-                    return '00:00'  
+                    return '00:00'
+                else:
+                    return rojo(grupo)
+                
             return f'{h}:{m:02d}'
         
         return rojo(grupo)
     
-    def rojo(texto):
-        return f'<span style = "color:red">{texto}</span>' #devuelve en rojo las expresiones incorrectas
              
     
-    compila= re.compile (r'\b\d{1,2}h(?:\d{1,2}m?)?'r'|\b\d{1,2}:\d{2}'r'|\b\d{1,2}\s*(?:en punto|y cuarto|y media|menos cuarto)(?:\s+de la\s+(?:mañana|tarde|noche))?'r'|\b\d{1,2}\s+de la\s+(?:mañana|tarde|noche)')
+    compila= re.compile (r'\b\d{1,2}h(?:\d{1,2}m?)?'r'|\b\d{1,2}:\d{1,2}'r'|\b\d{1,2}\s*(?:en punto|y cuarto|y media|menos cuarto)(?:\s+de la\s+(?:mañana|tarde|noche))?'r'|\b\d{1,2}\s+de la\s+(?:mañana|tarde|noche)'r'|(?<=\blas\s)\d{1,2}\b'r'|(?<=\ba las\s)\d{1,2}\b')
+    # r'|(?<=\blas\s)\d{1,2}\b'r'|(?<=\ba las\s)\d{1,2}\b' --> números precedidos por a las o las
 
     with open(ficText, encoding = 'utf-8') as entrada, open(ficNorm, 'w', encoding = 'utf-8') as salida:
         salida.write('<htm><body><pre style="font-family:monospace;">\n')
